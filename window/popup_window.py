@@ -14,7 +14,11 @@ class ImageWindow:
     previous_image_hash = None
     k = 0
 
-    def __init__(self):
+    def __init__(self, image_path=None):
+        # Use the provided image path or fall back to a default if none is provided
+        self.temp_image_path = image_path if image_path else tempfile.gettempdir().replace("\\", "/") + '/temp_image_preview.png'
+
+
         self.user32 = ctypes.windll.user32
         self.screen_width, self.screen_height = self.user32.GetSystemMetrics(0), self.user32.GetSystemMetrics(1)
         self.window_height = int(self.screen_height * 0.50)  # Initial width can be set accordingly
