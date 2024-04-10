@@ -1,75 +1,63 @@
-import psutil
 import os
-from PIL import Image
-import torch
-import torchvision.transforms.functional as tf
-from pathlib import Path
-import tempfile
-import random
+import sys
+import json
 import folder_paths
-import subprocess
+import time
 
 node_path = os.path.join(folder_paths.get_folder_paths("custom_nodes")[0], "comfyui-popup_preview")
 popup_window_path = os.path.join(node_path, 'window', 'popup_window.py')
+ps_gui_path = os.path.join(node_path, 'window', 'ps_gui.py')
 python_path = os.path.join(node_path, 'window', 'venv', 'Scripts', 'python.exe')
 
+sys.path.append(node_path)
+from ps_gui import popup_GUI
+sys.path.remove(node_path)
 
-
-def openWindows(image_path):
-    if os.path.exists(python_path):
-        python_running = any(p.info['exe'] == python_path for p in psutil.process_iter(['pid', 'name', 'exe']))
-        if os.path.exists(popup_window_path):
-            if not python_running:
-                subprocess.Popen([python_path, popup_window_path, image_path])
-        else:
-            print(f'Popup window not exist on: {popup_window_path}')
-    else:
-        print(f'Python not exist on: {python_path} and this is popup window path {popup_window_path}')
-
-def save_image(img: torch.Tensor, subpath):
-    # Check if the batch size is more than 1 (multiple images)
-    filename_prefix = "_temp_" + ''.join(random.choice("abcdefghijklmnopqrstupvxyz") for x in range(5))
-    if len(img.shape) == 4:
-        batch_size = img.shape[0]
-        for i in range(batch_size):
-            filename = f"{filename_prefix}_{i}.png"
-            file_path = os.path.join(subpath, filename)
-            save_single_image(img[i], file_path)
-    else:
-        filename = f"{filename_prefix}_{i}.png"
-        file_path = os.path.join(subpath, filename)
-        save_single_image(img, file_path)
-
-def save_single_image(image: torch.Tensor, path):
-    print(f"Image saved at {path}")
-    if len(image.shape) != 3 or image.shape[2] != 3:
-        raise ValueError(f"Input image must have 3 channels and a 3-dimensional shape, but got {image.shape}")
-    image = image.permute(2, 0, 1)  # Change from HWC to CHW
-    image = image.clamp(0, 1)  # Clamp values
-    image = tf.to_pil_image(image)  # Convert to PIL for saving
-    image.save(path, format="PNG", compress_level=1)
-    openWindows(path)
 
 
 class PreviewPopup:
-    INPUT_TYPES = lambda: { "required": { "image": ("IMAGE",) }, }
-    RETURN_TYPES = ()
-    OUTPUT_NODE = True
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+                "required": { 
+                    "input_data_path": ("STRING", {"default": "user_input_data.json"}),
+                    "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),   #make sure the server refresh the seed to update the values from user_input_data
+                },
+            }
+    RETURN_TYPES = ("noise_type", "seed_mode", "noise_scale", "reverse_CADS", "num_images", "prompt_positive", "prompt_negative", "lora_model", "visualized_steps", "sampling_steps")
+    RETURN_NAMES = ("noise_type", "seed_mode", "noise_scale", "reverse_CADS", "num_images", "prompt_positive", "prompt_negative", "lora_model", "visualized_steps", "sampling_steps")
     FUNCTION = "execute"
-    CATEGORY = "ToyxyzTestNodes"
+    CATEGORY = "LACE/Visualization"
+    
+    def handle_submit(self, data):
+        # Handle the received data
+        self.data_received = data
 
-    def execute(self,image: torch.Tensor):
+    def execute(self, input_data_path=None, seed=None):
+        with open(input_data_path, 'r') as f:
+            user_input_data = json.load(f)
+        print(user_input_data)
 
-        assert isinstance(image, torch.Tensor)
-        OUTPUT_PATH = folder_paths.get_temp_directory()
-        save_image(image, OUTPUT_PATH)
-
-        return ()
-
+        reverse_CADS = False
+        if user_input_data['reverse_CADS'] == "Radical":
+            print("Reverse CADS")
+            reverse_CADS = True
+        return (
+            user_input_data['noise_type'],
+            user_input_data['seed_mode'],
+            user_input_data['noise_scale'],
+            reverse_CADS,
+            user_input_data['num_images'],
+            user_input_data['prompt_positive'],
+            user_input_data['prompt_negative'],
+            user_input_data['lora_model'],
+            user_input_data['visualized_steps'],
+            user_input_data['sampling_steps'],
+        )
 NODE_CLASS_MAPPINGS = {
-    "PreviewPopup": PreviewPopup
+    "PreviewPopup_GUI": PreviewPopup
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "PreviewPopup": "PreviewPopup"
+    "PreviewPopup_GUI": "PreviewPopup_GUI"
 }
