@@ -24,8 +24,8 @@ class PreviewPopup:
                     "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),   #make sure the server refresh the seed to update the values from user_input_data
                 },
             }
-    RETURN_TYPES = ("noise_type", "seed_mode", "noise_scale", "reverse_CADS", "num_images", "prompt_positive", "prompt_negative", "lora_model", "visualized_steps", "sampling_steps")
-    RETURN_NAMES = ("noise_type", "seed_mode", "noise_scale", "reverse_CADS", "num_images", "prompt_positive", "prompt_negative", "lora_model", "visualized_steps", "sampling_steps")
+    RETURN_TYPES = ("denoise", "noise_type", "noise_scale", "reverse_CADS", "batch_size", "positive", "negative", "lora_name", "LACE_step", "steps", "strength")
+    RETURN_NAMES = ("denoise", "noise_type", "noise_scale", "reverse_CADS", "batch_size", "positive", "negative", "lora_name", "LACE_step", "steps", "strength")
     FUNCTION = "execute"
     CATEGORY = "LACE/Visualization"
     
@@ -34,26 +34,28 @@ class PreviewPopup:
         self.data_received = data
 
     def execute(self, input_data_path=None, seed=None):
+        reverse_CADS = False
         with open(input_data_path, 'r') as f:
             user_input_data = json.load(f)
-        print(user_input_data)
 
-        reverse_CADS = False
         if user_input_data['reverse_CADS'] == "Radical":
             print("Reverse CADS")
             reverse_CADS = True
         return (
+            user_input_data['denoise'],
             user_input_data['noise_type'],
-            user_input_data['seed_mode'],
             user_input_data['noise_scale'],
             reverse_CADS,
-            user_input_data['num_images'],
+            user_input_data['num_output'],
             user_input_data['prompt_positive'],
             user_input_data['prompt_negative'],
             user_input_data['lora_model'],
             user_input_data['visualized_steps'],
             user_input_data['sampling_steps'],
+            user_input_data['strength'],
         )
+    
+
 NODE_CLASS_MAPPINGS = {
     "PreviewPopup_GUI": PreviewPopup
 }
