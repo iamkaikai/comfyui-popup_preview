@@ -14,6 +14,12 @@ from ps_gui import popup_GUI
 sys.path.remove(node_path)
 
 
+# my_dir = os.path.dirname(os.path.abspath(__file__))
+# comfy_dir = os.path.abspath(os.path.join(my_dir, '..', '..'))
+# sys.path.append(comfy_dir)
+# import comfy.controlnet
+# sys.path.remove(comfy_dir)
+
 
 class PreviewPopup:
     @classmethod
@@ -24,8 +30,8 @@ class PreviewPopup:
                     "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),   #make sure the server refresh the seed to update the values from user_input_data
                 },
             }
-    RETURN_TYPES = ("denoise", "noise_type", "noise_scale", "reverse_CADS", "batch_size", "positive", "negative", "lora_name", "LACE_step", "steps", "strength")
-    RETURN_NAMES = ("denoise", "noise_type", "noise_scale", "reverse_CADS", "batch_size", "positive", "negative", "lora_name", "LACE_step", "steps", "strength")
+    RETURN_TYPES = ("denoise", "noise_type", "noise_scale", "reverse_CADS", "batch_size", "positive", "negative", "lora_name", "LACE_step", "steps", "strength", "control_net_name")
+    RETURN_NAMES = ("denoise", "noise_type", "noise_scale", "reverse_CADS", "batch_size", "positive", "negative", "lora_name", "LACE_step", "steps", "strength", "control_net_name")
     FUNCTION = "execute"
     CATEGORY = "LACE/Visualization"
     
@@ -41,6 +47,7 @@ class PreviewPopup:
         if user_input_data['reverse_CADS'] == "Radical":
             print("Reverse CADS")
             reverse_CADS = True
+       
         return (
             user_input_data['denoise'],
             user_input_data['noise_type'],
@@ -53,6 +60,7 @@ class PreviewPopup:
             user_input_data['visualized_steps'],
             user_input_data['sampling_steps'],
             user_input_data['strength'],
+            user_input_data['cnet_model']
         )
     
 
